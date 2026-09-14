@@ -283,6 +283,33 @@
     "MAG-2002214",
     "MAG-2003198"
   ]
+  },
+  {
+    "endpoint": "/v1/analytics/summary",
+    "category": "missing_endpoint",
+    "documented": "Returns pre-computed aggregates for your city — handy for a dashboard screen.",
+    "actual": "The live API returns a 404 Not Found for this endpoint. Alternative v2 insights endpoints mentioned in live documentation also fail.",
+    "how_found": "Requested GET /v1/analytics/summary and received a 404. Checked llms.txt which mentioned /v2, which also returned an error stating v2 is not yet implemented.",
+    "impact": "The frontend cannot rely on the API for insights; analytics must be manually derived from the raw listings dataset.",
+    "evidence": []
+  },
+  {
+    "endpoint": "/v1/listings",
+    "category": "completeness",
+    "documented": "Returns active sale listings in your city. Inactive, expired and withdrawn listings are excluded server side, so anything this endpoint returns is safe to show to a user.",
+    "actual": "The endpoint returns both live and non-live records, meaning inactive listings are NOT excluded server-side as promised.",
+    "how_found": "Observed that the total listing records retrieved (4,215) exceeded the actual live listings (3,227) by inspecting the 'is_live' boolean on the records.",
+    "impact": "Frontend and analytical scripts must manually filter all listing records by 'is_live === true' rather than trusting the endpoint's default output.",
+    "evidence": []
+  },
+  {
+    "endpoint": "/v1/projects",
+    "category": "consistency",
+    "documented": "total_listings is the number of listings currently available... so it always agrees with what GET /v1/listings?project_id=... returns.",
+    "actual": "The total_listings count on project records does not reliably match the actual number of listings tied to that project.",
+    "how_found": "Cross-referenced the project total_listings property against the actual count of listings per project and found 141 projects where the numbers disagreed.",
+    "impact": "Project-level aggregate fields cannot be trusted for UI display; listing counts must be manually tallied from the listings dataset.",
+    "evidence": []
   }
   ]
 }

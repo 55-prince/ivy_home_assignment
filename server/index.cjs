@@ -1019,44 +1019,216 @@ app.delete(
 // ANALYTICS
 // --------------------------------------------------
 
+function median(values) {
+  if (!values.length) {
+    return null;
+  }
+
+  const sorted = [...values].sort(
+    (a, b) => a - b
+  );
+
+  const middle = Math.floor(
+    sorted.length / 2
+  );
+
+  if (sorted.length % 2 === 0) {
+    return (
+      (sorted[middle - 1] +
+        sorted[middle]) /
+      2
+    );
+  }
+
+  return sorted[middle];
+}
+
 app.get(
   "/api/analytics/summary",
   requireAuth,
-  async (req, res) => {
+  (req, res) => {
     try {
-      const response =
-        await fetch(
-          `${IVY_BASE_URL}/v1/analytics/summary`,
-          {
-            headers: {
-              "X-API-Key": IVY_API_KEY,
-              ...(req.session.ivyToken
-                ? {
-                    Authorization:
-                      `Bearer ${req.session.ivyToken}`,
-                  }
-                : {}),
-            },
-          }
+      const listings =
+        readJson("listings.json");
+
+      // Use only live listings for current
+      // market insights.
+      const liveListings =
+        listings.filter(
+          (listing) =>
+            listing.is_live === true
         );
 
+      // -----------------------------
+      // Overall price statistics
+      // -----------------------------
 
-      const data =
-        await response.json();
+      const prices =
+        liveListings
+          .map((listing) =>
+            Number(listing.price)
+          )
+          .filter((price) =>
+            Number.isFinite(price)
+          );
 
+      const medianPrice =
+        median(prices);
 
-      if (!response.ok) {
-        return res.status(response.status).json({
-          message:
-            data?.message ||
-            data?.detail ||
-            "Unable to fetch analytics.",
-        });
-      }
+      // -----------------------------
+      // Median price per sq.ft.
+      // -----------------------------
 
+      const pricePerSqft =
+        liveListings
+          .map((listing) => {
+            const price =
+              Number(listing.price);
 
-      res.json(data);
+            const area =
+              Number(
+                listing.super_built_up_area
+              );
 
+            if (
+              !Number.isFinite(price) ||
+              !Number.isFinite(area) ||
+              area <= 0
+            ) {
+              return null;
+            }
+
+            return price / area;
+          })
+          .filter((value) =>
+            Number.isFinite(value)
+          );
+
+      const medianPricePerSqft =
+        median(pricePerSqft);
+
+      // -----------------------------
+      // Locality statistics
+      // -----------------------------
+
+      const localityMap = {};
+
+      liveListings.forEach(
+        (listing) => {
+          const locality =
+            listing.locality
+              ?.trim()
+              .toLowerCase();
+
+          if (!locality) {
+            return;
+          }
+
+          if (!localityMap[locality]) {
+            localityMap[locality] = [];
+          }
+
+          localityMap[locality].push(
+            listing
+          );
+        }
+      );
+
+      const byLocality =
+        Object.entries(localityMap)
+          .map(
+            ([locality, items]) => {
+              const localityPrices =
+                items
+                  .map((item) =>
+                    Number(item.price)
+                  )
+                  .filter((price) =>
+                    Number.isFinite(price)
+                  );
+
+              return {
+                locality,
+                count: items.length,
+                median_price:
+                  median(
+                    localityPrices
+                  ),
+              };
+            }
+          )
+          .sort(
+            (a, b) =>
+              b.count - a.count
+          );
+
+      // -----------------------------
+      // BHK statistics
+      // -----------------------------
+
+      const bhkMap = {};
+
+      liveListings.forEach(
+        (listing) => {
+          const bedroom =
+            Number(
+              listing.bedroom
+            );
+
+          if (
+            !Number.isFinite(
+              bedroom
+            )
+          ) {
+            return;
+          }
+
+          bhkMap[bedroom] =
+            (bhkMap[bedroom] || 0) +
+            1;
+        }
+      );
+
+      const byBhk =
+        Object.entries(bhkMap)
+          .map(
+            ([bedroom, count]) => ({
+              bedroom:
+                Number(bedroom),
+              count,
+            })
+          )
+          .sort(
+            (a, b) =>
+              a.bedroom -
+              b.bedroom
+          );
+
+      // -----------------------------
+      // Final analytics response
+      // -----------------------------
+
+      res.json({
+        city: "Hyderabad",
+
+        total_listings:
+          liveListings.length,
+
+        median_price:
+          medianPrice,
+
+        median_price_per_sqft:
+          medianPricePerSqft,
+
+        by_locality:
+          byLocality,
+
+        by_bhk:
+          byBhk,
+
+        source:
+          "local-v1-listings",
+      });
     } catch (error) {
       console.error(
         "Analytics error:",
@@ -1065,12 +1237,11 @@ app.get(
 
       res.status(500).json({
         message:
-          "Unable to fetch analytics.",
+          "Unable to calculate analytics.",
       });
     }
   }
 );
-
 
 // --------------------------------------------------
 // Start server

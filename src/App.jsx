@@ -3,7 +3,7 @@ import {
   Route,
   Routes,
 } from "react-router-dom";
-
+import Insights from "./pages/Insights";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Listings from "./pages/Listings";
@@ -59,6 +59,8 @@ function App() {
           path="/projects"
           element={<Projects />}
         />
+
+        <Route path="/insights" element={<Insights />} />
 
       </Route>
 
