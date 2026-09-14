@@ -2,71 +2,215 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const session = require("express-session");
+require("dotenv").config();
 
 const app = express();
 
-app.use(cors());
+const PORT = process.env.PORT || 5000;
+
+const IVY_BASE_URL =
+  process.env.IVY_BASE_URL || "https://solve.ivy.homes";
+
+const IVY_API_KEY = process.env.IVY_API_KEY;
+
+const DATA_DIR = path.join(__dirname, "data");
+const SAVED_FILE = path.join(DATA_DIR, "saved-listings.json");
+
+
+// --------------------------------------------------
+// Basic middleware
+// --------------------------------------------------
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
-const DATA_DIR = path.join(__dirname, "data");
+app.use(
+  session({
+    secret:
+      process.env.SESSION_SECRET || "development-secret-change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 8,
+    },
+  })
+);
+
+
+// --------------------------------------------------
+// Helpers
+// --------------------------------------------------
 
 function readJson(filename) {
   const filePath = path.join(DATA_DIR, filename);
 
   if (!fs.existsSync(filePath)) {
-    throw new Error(`${filename} missing. Run npm run seed first.`);
+    throw new Error(
+      `${filename} missing. Run npm run seed first.`
+    );
   }
 
   return JSON.parse(fs.readFileSync(filePath, "utf-8"));
 }
 
-function normalize(value) {
-  return String(value || "").toLowerCase().trim();
+
+function writeJson(filename, data) {
+  const filePath = path.join(DATA_DIR, filename);
+
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(data, null, 2),
+    "utf-8"
+  );
 }
+
+
+function normalize(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim();
+}
+
+
+function getCurrentUserEmail(req) {
+  return req.session?.user?.email || null;
+}
+
+
+function requireAuth(req, res, next) {
+  if (!req.session?.user) {
+    return res.status(401).json({
+      message: "Not authenticated.",
+    });
+  }
+
+  next();
+}
+
+
+// --------------------------------------------------
+// Filtering
+// --------------------------------------------------
 
 function filterProperties(data, query) {
   let result = [...data];
 
-  if (query.locality) {
-    result = result.filter(
-      item => normalize(item.locality) === normalize(query.locality)
-    );
+  const locality = normalize(query.locality);
+
+  const bedrooms =
+    query.bedrooms !== undefined
+      ? Number(query.bedrooms)
+      : null;
+
+  const minPrice =
+    query.min_price !== undefined
+      ? Number(query.min_price)
+      : null;
+
+  const maxPrice =
+    query.max_price !== undefined
+      ? Number(query.max_price)
+      : null;
+
+  const furnishing = normalize(query.furnishing);
+
+
+  if (locality) {
+    result = result.filter((item) => {
+      return normalize(
+        item.locality ||
+          item.city ||
+          item.location
+      ).includes(locality);
+    });
   }
 
-  if (query.bedroom) {
-    result = result.filter(
-      item => Number(item.bedroom) === Number(query.bedroom)
-    );
+
+  if (bedrooms !== null && !Number.isNaN(bedrooms)) {
+    result = result.filter((item) => {
+      const value =
+        item.bedroom ??
+        item.bedrooms ??
+        item.bhk;
+
+      return Number(value) === bedrooms;
+    });
   }
 
-  if (query.min_price) {
-    result = result.filter(
-      item => Number(item.price) >= Number(query.min_price)
-    );
+
+  if (minPrice !== null && !Number.isNaN(minPrice)) {
+    result = result.filter((item) => {
+      const price =
+        item.price ??
+        item.monthly_rent ??
+        item.rent;
+
+      return Number(price) >= minPrice;
+    });
   }
 
-  if (query.max_price) {
-    result = result.filter(
-      item => Number(item.price) <= Number(query.max_price)
-    );
+
+  if (maxPrice !== null && !Number.isNaN(maxPrice)) {
+    result = result.filter((item) => {
+      const price =
+        item.price ??
+        item.monthly_rent ??
+        item.rent;
+
+      return Number(price) <= maxPrice;
+    });
   }
 
-  if (query.furnishing) {
-    result = result.filter(
-      item => normalize(item.furnishing) === normalize(query.furnishing)
-    );
+
+  if (furnishing) {
+    result = result.filter((item) => {
+      return normalize(
+        item.furnishing ??
+          item.furnishing_status
+      ) === furnishing;
+    });
   }
+
 
   return result;
 }
 
+
+// --------------------------------------------------
+// Pagination
+// --------------------------------------------------
+
 function paginate(data, query) {
-  const page = Number(query.page || 1);
-  const limit = Number(query.limit || 20);
+  const page = Math.max(
+    Number(query.page || 1),
+    1
+  );
+
+  const limit = Math.min(
+    Math.max(Number(query.limit || 20), 1),
+    50
+  );
 
   const start = (page - 1) * limit;
-  const results = data.slice(start, start + limit);
+
+  const results = data.slice(
+    start,
+    start + limit
+  );
 
   return {
     total: data.length,
@@ -74,76 +218,645 @@ function paginate(data, query) {
     limit,
     count: results.length,
     has_more: start + limit < data.length,
-    results
+    results,
   };
 }
 
-app.get("/api/listings", (req, res) => {
-  try {
-    const listings = readJson("listings.json");
-    const filtered = filterProperties(listings, req.query);
-    res.json(paginate(filtered, req.query));
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+
+// --------------------------------------------------
+// Health check
+// --------------------------------------------------
+
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+  });
 });
 
-app.get("/api/listings/:id", (req, res) => {
-  try {
-    const listings = readJson("listings.json");
-    const listing = listings.find(item => item.listing_id === req.params.id);
 
-    if (!listing) {
-      return res.status(404).json({ message: "Listing not found" });
+// --------------------------------------------------
+// AUTH
+// --------------------------------------------------
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required.",
+      });
     }
 
-    res.json(listing);
+
+    const response = await fetch(
+      `${IVY_BASE_URL}/auth/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": IVY_API_KEY,
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      }
+    );
+
+
+    const data = await response.json();
+
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        message:
+          data?.message ||
+          data?.detail ||
+          "Login failed.",
+      });
+    }
+
+
+    const token =
+      data?.access_token ||
+      data?.token;
+
+
+    if (!token) {
+      return res.status(502).json({
+        message:
+          "Login succeeded but no access token was returned.",
+      });
+    }
+
+
+    req.session.ivyToken = token;
+
+    req.session.user = {
+      email,
+    };
+
+
+    return res.json({
+      user: {
+        email,
+      },
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(
+      "Login error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message: "Unable to login.",
+    });
   }
 });
 
-app.get("/api/rentals", (req, res) => {
-  try {
-    const rentals = readJson("rentals.json");
-    const filtered = filterProperties(rentals, req.query);
-    res.json(paginate(filtered, req.query));
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+
+app.get(
+  "/api/auth/me",
+  (req, res) => {
+    if (!req.session?.user) {
+      return res.status(401).json({
+        message: "Not authenticated.",
+      });
+    }
+
+    res.json({
+      user: req.session.user,
+    });
   }
-});
+);
 
-app.get("/api/projects", (req, res) => {
-  try {
-    let projects = readJson("projects.json");
 
-    if (req.query.locality) {
-      projects = projects.filter(
-        item => normalize(item.locality) === normalize(req.query.locality)
+app.post(
+  "/api/auth/logout",
+  (req, res) => {
+    req.session.destroy((error) => {
+      if (error) {
+        return res.status(500).json({
+          message: "Logout failed.",
+        });
+      }
+
+      res.clearCookie("connect.sid");
+
+      res.json({
+        message: "Logged out successfully.",
+      });
+    });
+  }
+);
+
+
+// --------------------------------------------------
+// LISTINGS
+// --------------------------------------------------
+
+app.get(
+  "/api/listings",
+  (req, res) => {
+    try {
+      const listings =
+        readJson("listings.json");
+
+      const filtered =
+        filterProperties(
+          listings,
+          req.query
+        );
+
+      const result =
+        paginate(
+          filtered,
+          req.query
+        );
+
+      res.json(result);
+
+    } catch (error) {
+      console.error(
+        "Listings error:",
+        error.message
       );
+
+      res.status(500).json({
+        message: error.message,
+      });
     }
-
-    res.json(paginate(projects, req.query));
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
-app.get("/api/projects/:id", (req, res) => {
+
+app.get(
+  "/api/listings/:id",
+  (req, res) => {
+    try {
+      const listings =
+        readJson("listings.json");
+
+      const listing =
+        listings.find(
+          (item) =>
+            String(
+              item.listing_id ??
+                item.id
+            ) ===
+            String(req.params.id)
+        );
+
+
+      if (!listing) {
+        return res.status(404).json({
+          message: "Listing not found.",
+        });
+      }
+
+
+      res.json(listing);
+
+    } catch (error) {
+      console.error(
+        "Listing detail error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message: error.message,
+      });
+    }
+  }
+);
+
+
+// --------------------------------------------------
+// RENTALS
+// --------------------------------------------------
+
+app.get(
+  "/api/rentals",
+  (req, res) => {
+    try {
+      const rentals =
+        readJson("rentals.json");
+
+      const filtered =
+        filterProperties(
+          rentals,
+          req.query
+        );
+
+      const result =
+        paginate(
+          filtered,
+          req.query
+        );
+
+      res.json(result);
+
+    } catch (error) {
+      console.error(
+        "Rentals error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message: error.message,
+      });
+    }
+  }
+);
+
+
+// --------------------------------------------------
+// PROJECTS
+// --------------------------------------------------
+
+app.get(
+  "/api/projects",
+  (req, res) => {
+    try {
+      const projects =
+        readJson("projects.json");
+
+      const filtered =
+        filterProperties(
+          projects,
+          req.query
+        );
+
+      const result =
+        paginate(
+          filtered,
+          req.query
+        );
+
+      res.json(result);
+
+    } catch (error) {
+      console.error(
+        "Projects error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message: error.message,
+      });
+    }
+  }
+);
+
+
+app.get(
+  "/api/projects/:id",
+  (req, res) => {
+    try {
+      const projects =
+        readJson("projects.json");
+
+      const project =
+        projects.find(
+          (item) =>
+            String(
+              item.project_id ??
+                item.id
+            ) ===
+            String(req.params.id)
+        );
+
+
+      if (!project) {
+        return res.status(404).json({
+          message: "Project not found.",
+        });
+      }
+
+
+      res.json(project);
+
+    } catch (error) {
+      console.error(
+        "Project detail error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message: error.message,
+      });
+    }
+  }
+);
+
+
+// --------------------------------------------------
+// SAVED LISTINGS
+// --------------------------------------------------
+//
+// Saved listings are intentionally stored locally.
+// We do NOT guess an Ivy upstream favourites endpoint.
+//
+// Data structure:
+//
+// {
+//   "user@email.com": ["listing-id-1", "listing-id-2"]
+// }
+//
+// This gives each logged-in user their own persistent
+// saved listings.
+// --------------------------------------------------
+
+function readSavedListings() {
+  if (!fs.existsSync(SAVED_FILE)) {
+    return {};
+  }
+
   try {
-    const projects = readJson("projects.json");
-    const project = projects.find(item => item.project_id === req.params.id);
-
-    if (!project) {
-      return res.status(404).json({ message: "Project not found" });
-    }
-
-    res.json(project);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    return JSON.parse(
+      fs.readFileSync(
+        SAVED_FILE,
+        "utf-8"
+      )
+    );
+  } catch {
+    return {};
   }
-});
+}
+
+
+function writeSavedListings(data) {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(
+      DATA_DIR,
+      { recursive: true }
+    );
+  }
+
+  fs.writeFileSync(
+    SAVED_FILE,
+    JSON.stringify(data, null, 2),
+    "utf-8"
+  );
+}
+
+
+app.get(
+  "/api/saved-listings",
+  requireAuth,
+  (req, res) => {
+    try {
+      const email =
+        getCurrentUserEmail(req);
+
+      const saved =
+        readSavedListings();
+
+      const ids =
+        saved[email] || [];
+
+
+      const listings =
+        readJson("listings.json");
+
+
+      const results =
+        listings.filter((listing) => {
+          const id = String(
+            listing.listing_id ??
+              listing.id
+          );
+
+          return ids.includes(id);
+        });
+
+
+      res.json({
+        results,
+        count: results.length,
+      });
+
+    } catch (error) {
+      console.error(
+        "Get saved listings error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message:
+          "Unable to get saved listings.",
+      });
+    }
+  }
+);
+
+
+app.post(
+  "/api/saved-listings",
+  requireAuth,
+  (req, res) => {
+    try {
+      const {
+        listing_id,
+        id,
+      } = req.body;
+
+
+      const listingId =
+        String(
+          listing_id ?? id ?? ""
+        );
+
+
+      if (!listingId) {
+        return res.status(400).json({
+          message:
+            "listing_id is required.",
+        });
+      }
+
+
+      const listings =
+        readJson("listings.json");
+
+
+      const listing =
+        listings.find(
+          (item) =>
+            String(
+              item.listing_id ??
+                item.id
+            ) === listingId
+        );
+
+
+      if (!listing) {
+        return res.status(404).json({
+          message: "Listing not found.",
+        });
+      }
+
+
+      const email =
+        getCurrentUserEmail(req);
+
+      const saved =
+        readSavedListings();
+
+
+      if (!saved[email]) {
+        saved[email] = [];
+      }
+
+
+      if (!saved[email].includes(listingId)) {
+        saved[email].push(listingId);
+      }
+
+
+      writeSavedListings(saved);
+
+
+      res.status(201).json({
+        message:
+          "Listing saved successfully.",
+        listing_id: listingId,
+      });
+
+    } catch (error) {
+      console.error(
+        "Save listing error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message:
+          "Unable to save listing.",
+      });
+    }
+  }
+);
+
+
+app.delete(
+  "/api/saved-listings/:id",
+  requireAuth,
+  (req, res) => {
+    try {
+      const email =
+        getCurrentUserEmail(req);
+
+      const listingId =
+        String(req.params.id);
+
+
+      const saved =
+        readSavedListings();
+
+
+      if (!saved[email]) {
+        return res.json({
+          message:
+            "Listing removed.",
+        });
+      }
+
+
+      saved[email] =
+        saved[email].filter(
+          (id) =>
+            String(id) !== listingId
+        );
+
+
+      writeSavedListings(saved);
+
+
+      res.json({
+        message:
+          "Listing removed successfully.",
+      });
+
+    } catch (error) {
+      console.error(
+        "Remove saved listing error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message:
+          "Unable to remove saved listing.",
+      });
+    }
+  }
+);
+
+
+// --------------------------------------------------
+// ANALYTICS
+// --------------------------------------------------
+
+app.get(
+  "/api/analytics/summary",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const response =
+        await fetch(
+          `${IVY_BASE_URL}/v1/analytics/summary`,
+          {
+            headers: {
+              "X-API-Key": IVY_API_KEY,
+              ...(req.session.ivyToken
+                ? {
+                    Authorization:
+                      `Bearer ${req.session.ivyToken}`,
+                  }
+                : {}),
+            },
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          message:
+            data?.message ||
+            data?.detail ||
+            "Unable to fetch analytics.",
+        });
+      }
+
+
+      res.json(data);
+
+    } catch (error) {
+      console.error(
+        "Analytics error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message:
+          "Unable to fetch analytics.",
+      });
+    }
+  }
+);
+
+
+// --------------------------------------------------
+// Start server
+// --------------------------------------------------
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(
+    `API server running on http://localhost:${PORT}`
+  );
 });

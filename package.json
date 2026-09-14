@@ -5,23 +5,24 @@
   "type": "module",
   "scripts": {
     "client": "vite",
-    "server": "nodemon server/index.cjs",
+    "server": "nodemon --ignore server/data/ server/index.cjs",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "seed": "node server/seed.cjs",
     "build": "vite build",
     "analyze": "node server/analyze.cjs",
     "answers": "node server/answers.cjs",
-    
     "fakeStrong": "node server/fakeStrong.cjs"
-   }, 
+  },
   "dependencies": {
     "concurrently": "^10.0.5",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "lucide-react": "^1.45.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

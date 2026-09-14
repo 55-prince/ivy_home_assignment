@@ -1,0 +1,304 @@
+.listing-detail {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 40px 0 80px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  margin-bottom: 28px;
+
+  color: #697169;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: #18201b;
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 50px;
+
+  align-items: start;
+}
+
+.detail-image {
+  position: relative;
+
+  min-height: 560px;
+
+  overflow: hidden;
+
+  border-radius: 22px;
+
+  background: #e5e1d6;
+}
+
+.detail-image img {
+  width: 100%;
+  height: 100%;
+
+  min-height: 560px;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.detail-image-placeholder {
+  min-height: 560px;
+
+  display: grid;
+  place-items: center;
+
+  color: #737b72;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.detail-content {
+  padding-top: 8px;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 20px;
+}
+
+.detail-badge {
+  padding: 7px 10px;
+
+  border-radius: 100px;
+
+  background: #e8e5dc;
+  color: #626a62;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+}
+
+.detail-save {
+  width: 40px;
+  height: 40px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid #dcd9d1;
+  border-radius: 50%;
+
+  background: white;
+  color: #303730;
+}
+
+.detail-content h1 {
+  margin: 0;
+
+  color: #18201b;
+
+  font-size: clamp(40px, 5vw, 62px);
+  line-height: 0.98;
+
+  letter-spacing: -0.06em;
+}
+
+.detail-location {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  margin-top: 17px;
+
+  color: #777f77;
+
+  font-size: 14px;
+}
+
+.detail-price {
+  margin-top: 28px;
+
+  color: #18201b;
+
+  font-size: 28px;
+  font-weight: 700;
+
+  letter-spacing: -0.04em;
+}
+
+.detail-specs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+
+  margin-top: 30px;
+
+  border-top: 1px solid #e3e0d8;
+  border-bottom: 1px solid #e3e0d8;
+}
+
+.detail-specs div {
+  display: grid;
+  gap: 5px;
+
+  padding: 16px 0;
+
+  border-bottom: 1px solid #eeeae2;
+}
+
+.detail-specs div:nth-child(odd) {
+  margin-right: 20px;
+}
+
+.detail-specs span,
+.detail-information span {
+  color: #929891;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.detail-specs strong,
+.detail-information strong {
+  color: #303730;
+
+  font-size: 13px;
+}
+
+.detail-section {
+  margin-top: 32px;
+}
+
+.detail-section h2 {
+  margin: 0 0 16px;
+
+  color: #273028;
+
+  font-size: 17px;
+  letter-spacing: -0.03em;
+}
+
+.detail-information {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-information div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding-bottom: 12px;
+
+  border-bottom: 1px solid #eeeae2;
+}
+
+.save-listing-button {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  margin-top: 32px;
+  padding: 14px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: #18201b;
+  color: white;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detail-state {
+  min-height: 60vh;
+
+  display: grid;
+  place-content: center;
+
+  padding: 40px;
+
+  text-align: center;
+}
+
+.detail-state h2 {
+  margin: 0;
+
+  color: #18201b;
+}
+
+.detail-state p {
+  color: #737b72;
+}
+
+.detail-state a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  color: #18201b;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+.detail-error {
+  color: #b42318;
+}
+
+@media (max-width: 850px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .detail-image,
+  .detail-image img,
+  .detail-image-placeholder {
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 500px) {
+  .listing-detail {
+    width: min(100% - 30px, 1180px);
+  }
+
+  .detail-content h1 {
+    font-size: 42px;
+  }
+
+  .detail-specs {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-specs div:nth-child(odd) {
+    margin-right: 0;
+  }
+}
