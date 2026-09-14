@@ -4,7 +4,7 @@ import { Heart } from "lucide-react";
 import { ivyApi } from "../api/ivyApi";
 import PageLayout from "../components/PageLayout";
 import PropertyCard from "../components/PropertyCard";
-import "./Saved.css";
+import "./saved.css";
 
 function Saved() {
   const [listings, setListings] = useState([]);
