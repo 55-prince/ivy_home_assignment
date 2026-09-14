@@ -1,6 +1,7 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:5000/api";
+  "/api";
+
 
 async function request(endpoint, options = {}) {
   const response = await fetch(
@@ -17,6 +18,7 @@ async function request(endpoint, options = {}) {
     }
   );
 
+
   let data = null;
 
   try {
@@ -24,6 +26,7 @@ async function request(endpoint, options = {}) {
   } catch {
     data = null;
   }
+
 
   if (!response.ok) {
     const message =
@@ -35,17 +38,56 @@ async function request(endpoint, options = {}) {
     throw new Error(message);
   }
 
+
   return data;
 }
 
+
+/* ========================================
+   Query Builder
+======================================== */
+
+function buildQuery(params = {}) {
+  const query =
+    new URLSearchParams();
+
+
+  Object.entries(params).forEach(
+    ([key, value]) => {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== ""
+      ) {
+        query.set(
+          key,
+          String(value)
+        );
+      }
+    }
+  );
+
+
+  const queryString =
+    query.toString();
+
+
+  return queryString
+    ? `?${queryString}`
+    : "";
+}
+
+
 export const ivyApi = {
-  /* =========================
+
+  /* ========================================
      AUTH
-  ========================= */
+  ======================================== */
 
   login(email, password) {
     return request("/auth/login", {
       method: "POST",
+
       body: JSON.stringify({
         email,
         password,
@@ -53,43 +95,80 @@ export const ivyApi = {
     });
   },
 
+
   logout() {
-    return request("/auth/logout", {
-      method: "POST",
-    });
+    return request(
+      "/auth/logout",
+      {
+        method: "POST",
+      }
+    );
   },
+
 
   getCurrentUser() {
     return request("/auth/me");
   },
 
-  /* =========================
+
+  /* ========================================
      LISTINGS
-  ========================= */
+  ======================================== */
 
-  getListings(params = {}) {
-    const query = new URLSearchParams();
+  // getListings({
+  //   page = 1,
+  //   limit = 20,
+  //   locality = "",
+  //   bedrooms = "",
+  //   furnishing = "",
+  //   minPrice = "",
+  //   maxPrice = "",
+  // } = {}) {
 
-    Object.entries(params).forEach(
-      ([key, value]) => {
-        if (
-          value !== undefined &&
-          value !== null &&
-          value !== ""
-        ) {
-          query.set(key, value);
-        }
-      }
-    );
+  //   const query =
+  //     buildQuery({
+  //       page,
+  //       limit,
+  //       locality,
+  //       bedrooms,
+  //       furnishing,
 
-    const queryString = query.toString();
+  //       // Translate frontend names
+  //       // to backend query names.
+  //       min_price: minPrice,
+  //       max_price: maxPrice,
+  //     });
 
-    return request(
-      `/listings${
-        queryString ? `?${queryString}` : ""
-      }`
-    );
-  },
+
+  //   return request(
+  //     `/listings${query}`
+  //   );
+  // },
+
+  getListings({
+  page = 1,
+  limit = 20,
+  locality = "",
+  bedrooms = "",
+  furnishing = "",
+  min_price = "",
+  max_price = "",
+} = {}) {
+  const query = buildQuery({
+    page,
+    limit,
+    locality,
+    bedrooms,
+    furnishing,
+    min_price,
+    max_price,
+  });
+
+  return request(
+    `/listings${query}`
+  );
+},
+
 
   getListing(id) {
     return request(
@@ -97,61 +176,109 @@ export const ivyApi = {
     );
   },
 
-  /* =========================
+
+  /* ========================================
      RENTALS
-  ========================= */
+  ======================================== */
 
-  getRentals(params = {}) {
-    const query = new URLSearchParams();
+  // getRentals({
+  //   page = 1,
+  //   limit = 20,
+  //   locality = "",
+  //   bedrooms = "",
+  //   furnishing = "",
+  //   minPrice = "",
+  //   maxPrice = "",
+  // } = {}) {
 
-    Object.entries(params).forEach(
-      ([key, value]) => {
-        if (
-          value !== undefined &&
-          value !== null &&
-          value !== ""
-        ) {
-          query.set(key, value);
-        }
-      }
-    );
+  //   const query =
+  //     buildQuery({
+  //       page,
+  //       limit,
+  //       locality,
+  //       bedrooms,
+  //       furnishing,
+  //       min_price: minPrice,
+  //       max_price: maxPrice,
+  //     });
 
-    const queryString = query.toString();
 
-    return request(
-      `/rentals${
-        queryString ? `?${queryString}` : ""
-      }`
-    );
-  },
+  //   return request(
+  //     `/rentals${query}`
+  //   );
+  // },
+getRentals({
+  page = 1,
+  limit = 20,
+  locality = "",
+  bedrooms = "",
+  min_price = "",
+  max_price = "",
+  furnishing = "",
+} = {}) {
+  const params = new URLSearchParams();
 
-  /* =========================
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+
+  if (locality !== "") {
+    params.set("locality", locality);
+  }
+
+  if (bedrooms !== "") {
+    params.set("bedrooms", String(bedrooms));
+  }
+
+  if (furnishing !== "") {
+    params.set("furnishing", furnishing);
+  }
+
+  if (min_price !== "") {
+    params.set("min_price", String(min_price));
+  }
+
+  if (max_price !== "") {
+    params.set("max_price", String(max_price));
+  }
+
+  const url = `/rentals?${params.toString()}`;
+
+  console.log("Rental API request:", url);
+
+  return request(url);
+},
+
+  /* ========================================
      PROJECTS
-  ========================= */
+  ======================================== */
 
-  getProjects(params = {}) {
-    const query = new URLSearchParams();
+  getProjects({
+    page = 1,
+    limit = 20,
+    locality = "",
+    bedrooms = "",
+    furnishing = "",
+    minPrice = "",
+    maxPrice = "",
+  } = {}) {
 
-    Object.entries(params).forEach(
-      ([key, value]) => {
-        if (
-          value !== undefined &&
-          value !== null &&
-          value !== ""
-        ) {
-          query.set(key, value);
-        }
-      }
-    );
+    const query =
+      buildQuery({
+        page,
+        limit,
+        locality,
+        bedrooms,
+        furnishing,
+        min_price: minPrice,
+        max_price: maxPrice,
+      });
 
-    const queryString = query.toString();
 
     return request(
-      `/projects${
-        queryString ? `?${queryString}` : ""
-      }`
+      `/projects${query}`
     );
   },
+
 
   getProject(id) {
     return request(
@@ -159,31 +286,42 @@ export const ivyApi = {
     );
   },
 
-  /* =========================
+
+  /* ========================================
      ANALYTICS
-  ========================= */
+  ======================================== */
 
   getAnalyticsSummary() {
-    return request("/analytics/summary");
+    return request(
+      "/analytics/summary"
+    );
   },
 
-  /* =========================
+
+  /* ========================================
      SAVED LISTINGS
-  ========================= */
+  ======================================== */
 
   getSavedListings() {
-    return request("/saved-listings");
+    return request(
+      "/saved-listings"
+    );
   },
+
 
   saveListing(listingId) {
-    return request("/saved-listings", {
-      method: "POST",
+    return request(
+      "/saved-listings",
+      {
+        method: "POST",
 
-      body: JSON.stringify({
-        listing_id: listingId,
-      }),
-    });
+        body: JSON.stringify({
+          listing_id: listingId,
+        }),
+      }
+    );
   },
+
 
   removeSavedListing(listingId) {
     return request(
@@ -195,4 +333,5 @@ export const ivyApi = {
       }
     );
   },
+
 };

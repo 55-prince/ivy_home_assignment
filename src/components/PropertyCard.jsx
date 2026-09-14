@@ -1,13 +1,27 @@
-import { Heart, MapPin } from "lucide-react";
+import {
+  Heart,
+  MapPin,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { ivyApi } from "../api/ivyApi";
+import { useState } from "react";
+
+import { useSavedListings } from "../context/SavedListingsContext";
+
 import "./PropertyCard.css";
 
 function PropertyCard({ listing }) {
   const listingId = String(
-    listing.listing_id ?? listing.id
+    listing.listing_id ??
+      listing.id
   );
+
+  const {
+    isSaved,
+    toggleSaved,
+  } = useSavedListings();
+
+  const [saving, setSaving] =
+    useState(false);
 
   const bedroom =
     listing.bedroom ??
@@ -39,55 +53,9 @@ function PropertyCard({ listing }) {
     listing.image ??
     listing.photo_url;
 
-
-  const [isSaved, setIsSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-
-  // Check whether this listing is already saved
-  // when the card is loaded.
-  useEffect(() => {
-    let mounted = true;
-
-    async function checkSaved() {
-      try {
-        const response =
-          await ivyApi.getSavedListings();
-
-        const savedListings =
-          response?.results ??
-          response ??
-          [];
-
-        const exists =
-          savedListings.some(
-            (item) =>
-              String(
-                item.listing_id ??
-                  item.id
-              ) === listingId
-          );
-
-        if (mounted) {
-          setIsSaved(exists);
-        }
-      } catch {
-        // User may not be authenticated.
-        // In that case the card simply stays unsaved.
-      }
-    }
-
-    checkSaved();
-
-    return () => {
-      mounted = false;
-    };
-  }, [listingId]);
-
+  const saved = isSaved(listingId);
 
   async function handleSave(event) {
-    // Do not navigate to the listing detail page
-    // when clicking the heart.
     event.preventDefault();
     event.stopPropagation();
 
@@ -96,20 +64,7 @@ function PropertyCard({ listing }) {
     try {
       setSaving(true);
 
-      if (isSaved) {
-        await ivyApi.removeSavedListing(
-          listingId
-        );
-
-        setIsSaved(false);
-      } else {
-        await ivyApi.saveListing(
-          listingId
-        );
-
-        setIsSaved(true);
-      }
-
+      await toggleSaved(listingId);
     } catch (error) {
       console.error(
         "Unable to update saved listing:",
@@ -120,12 +75,9 @@ function PropertyCard({ listing }) {
     }
   }
 
-
   return (
     <article className="listing-card">
-
       <div className="listing-image">
-
         {image ? (
           <img
             src={image}
@@ -137,21 +89,20 @@ function PropertyCard({ listing }) {
           </div>
         )}
 
-
         <button
           type="button"
           className={`favorite-icon ${
-            isSaved ? "saved" : ""
+            saved ? "saved" : ""
           }`}
           onClick={handleSave}
           disabled={saving}
           aria-label={
-            isSaved
-              ? `Remove ${title} from saved listings`
-              : `Save ${title}`
+            saved
+              ? "Remove from saved listings"
+              : "Save listing"
           }
           title={
-            isSaved
+            saved
               ? "Remove from saved"
               : "Save listing"
           }
@@ -159,18 +110,15 @@ function PropertyCard({ listing }) {
           <Heart
             size={19}
             fill={
-              isSaved
+              saved
                 ? "currentColor"
                 : "none"
             }
           />
         </button>
-
       </div>
 
-
       <div className="listing-content">
-
         <div className="listing-topline">
           <span>
             {bedroom
@@ -185,21 +133,19 @@ function PropertyCard({ listing }) {
           )}
         </div>
 
-
         <h2>{title}</h2>
-
 
         <div className="listing-location">
           <MapPin size={14} />
           <span>{locality}</span>
         </div>
 
-
         <div className="listing-bottom">
-
           <strong>
             {price != null
-              ? `₹${Number(price).toLocaleString(
+              ? `₹${Number(
+                  price
+                ).toLocaleString(
                   "en-IN"
                 )}`
               : "Price on request"}
@@ -210,11 +156,8 @@ function PropertyCard({ listing }) {
           >
             View details
           </Link>
-
         </div>
-
       </div>
-
     </article>
   );
 }

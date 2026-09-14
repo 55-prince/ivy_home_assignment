@@ -437,41 +437,262 @@ app.get(
 // RENTALS
 // --------------------------------------------------
 
-app.get(
-  "/api/rentals",
-  (req, res) => {
-    try {
-      const rentals =
-        readJson("rentals.json");
+// app.get(
+//   "/api/rentals",
+//   (req, res) => {
+//     try {
+//       let rentals =
+//         readJson("rentals.json");
 
-      const filtered =
-        filterProperties(
-          rentals,
-          req.query
-        );
+//       const {
+//         locality,
+//         bedrooms,
+//         furnishing,
+//         min_price,
+//         max_price,
+//       } = req.query;
 
-      const result =
-        paginate(
-          filtered,
-          req.query
-        );
+//       // Locality
+//       if (locality) {
+//         const searchLocality =
+//           normalize(locality);
 
-      res.json(result);
+//         rentals = rentals.filter(
+//           (rental) =>
+//             normalize(
+//               rental.locality
+//             ).includes(
+//               searchLocality
+//             )
+//         );
+//       }
 
-    } catch (error) {
-      console.error(
-        "Rentals error:",
-        error.message
+//       // Bedrooms
+//       if (bedrooms !== undefined && bedrooms !== "") {
+//         const bedroomCount =
+//           Number(bedrooms);
+
+//         if (
+//           !Number.isNaN(
+//             bedroomCount
+//           )
+//         ) {
+//           rentals = rentals.filter(
+//             (rental) =>
+//               Number(
+//                 rental.bedroom
+//               ) === bedroomCount
+//           );
+//         }
+//       }
+
+//       // Furnishing
+//       if (
+//         furnishing !== undefined &&
+//         furnishing !== ""
+//       ) {
+//         const requestedFurnishing =
+//           normalize(furnishing);
+
+//         rentals = rentals.filter(
+//           (rental) =>
+//             normalize(
+//               rental.furnishing
+//             ) ===
+//             requestedFurnishing
+//         );
+//       }
+
+//       // Minimum monthly rent
+//       if (
+//         min_price !== undefined &&
+//         min_price !== ""
+//       ) {
+//         const minPrice =
+//           Number(min_price);
+
+//         if (
+//           !Number.isNaN(minPrice)
+//         ) {
+//           rentals = rentals.filter(
+//             (rental) =>
+//               Number(
+//                 rental.price
+//               ) >= minPrice
+//           );
+//         }
+//       }
+
+//       // Maximum monthly rent
+//       if (
+//         max_price !== undefined &&
+//         max_price !== ""
+//       ) {
+//         const maxPrice =
+//           Number(max_price);
+
+//         if (
+//           !Number.isNaN(maxPrice)
+//         ) {
+//           rentals = rentals.filter(
+//             (rental) =>
+//               Number(
+//                 rental.price
+//               ) <= maxPrice
+//           );
+//         }
+//       }
+
+//       // Pagination AFTER filtering
+//       const result =
+//         paginate(
+//           rentals,
+//           req.query
+//         );
+
+//       res.json(result);
+
+//     } catch (error) {
+//       console.error(
+//         "Rentals error:",
+//         error.message
+//       );
+
+//       res.status(500).json({
+//         message:
+//           error.message,
+//       });
+//     }
+//   }
+// );
+// --------------------------------------------------
+// RENTALS
+// --------------------------------------------------
+
+app.get("/api/rentals", (req, res) => {
+  try {
+    let rentals = readJson("rentals.json");
+
+    console.log("Rental query:", req.query);
+
+    const {
+      locality,
+      bedrooms,
+      furnishing,
+      min_price,
+      max_price,
+    } = req.query;
+
+    // ----------------------------------------------
+    // Locality
+    // ----------------------------------------------
+
+    if (locality) {
+      const searchLocality =
+        normalize(locality);
+
+      rentals = rentals.filter((rental) =>
+        normalize(rental.locality).includes(
+          searchLocality
+        )
       );
-
-      res.status(500).json({
-        message: error.message,
-      });
     }
+
+    // ----------------------------------------------
+    // Bedrooms
+    // ----------------------------------------------
+
+    if (bedrooms) {
+      const bedroomCount =
+        Number(bedrooms);
+
+      if (!Number.isNaN(bedroomCount)) {
+        rentals = rentals.filter(
+          (rental) =>
+            Number(rental.bedroom) ===
+            bedroomCount
+        );
+      }
+    }
+
+    // ----------------------------------------------
+    // Furnishing
+    // ----------------------------------------------
+
+    if (furnishing) {
+      const requestedFurnishing =
+        normalize(furnishing);
+
+      rentals = rentals.filter(
+        (rental) =>
+          normalize(rental.furnishing) ===
+          requestedFurnishing
+      );
+    }
+
+    // ----------------------------------------------
+    // MINIMUM PRICE
+    // ----------------------------------------------
+
+    if (
+      min_price !== undefined &&
+      min_price !== ""
+    ) {
+      const minimum =
+        Number(min_price);
+
+      if (!Number.isNaN(minimum)) {
+        rentals = rentals.filter(
+          (rental) =>
+            Number(rental.price) >=
+            minimum
+        );
+      }
+    }
+
+    // ----------------------------------------------
+    // MAXIMUM PRICE
+    // ----------------------------------------------
+
+    if (
+      max_price !== undefined &&
+      max_price !== ""
+    ) {
+      const maximum =
+        Number(max_price);
+
+      if (!Number.isNaN(maximum)) {
+        rentals = rentals.filter(
+          (rental) =>
+            Number(rental.price) <=
+            maximum
+        );
+      }
+    }
+
+    console.log(
+      "Filtered rentals:",
+      rentals.length
+    );
+
+    const result = paginate(
+      rentals,
+      req.query
+    );
+
+    res.json(result);
+
+  } catch (error) {
+    console.error(
+      "Rentals error:",
+      error.message
+    );
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
-);
-
-
+});
 // --------------------------------------------------
 // PROJECTS
 // --------------------------------------------------

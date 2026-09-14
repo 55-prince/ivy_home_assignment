@@ -1,0 +1,487 @@
+.rentals-page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 42px 0 80px;
+}
+
+.rentals-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 32px;
+}
+
+.rentals-eyebrow {
+  color: #839088;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.rentals-header h1 {
+  margin: 8px 0 0;
+  color: #17201c;
+  font-size: clamp(38px, 5vw, 52px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+}
+
+.rentals-header p {
+  max-width: 600px;
+  margin: 14px 0 0;
+  color: #69756f;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.rentals-header-icon {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dce3de;
+  border-radius: 17px;
+  background: #edf2ee;
+  color: #4f6157;
+}
+
+.rentals-results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 38px 0 22px;
+  color: #718078;
+  font-size: 12px;
+}
+
+.rentals-results-bar strong {
+  color: #28352e;
+}
+
+.rentals-results-bar button {
+  border: 0;
+  background: transparent;
+  color: #52645a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rentals-results-bar button:hover {
+  color: #17201c;
+  text-decoration: underline;
+}
+
+/* Grid */
+
+.rentals-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+/* Card */
+
+.rental-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 23px;
+  border: 1px solid #dfe5e1;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow:
+    0 10px 30px rgba(23, 32, 28, 0.045);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.rental-card:hover {
+  transform: translateY(-4px);
+  border-color: #cbd5ce;
+  box-shadow:
+    0 18px 40px rgba(23, 32, 28, 0.09);
+}
+
+.rental-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rental-property-icon {
+  width: 43px;
+  height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #edf2ee;
+  color: #4f6559;
+}
+
+.rental-heart {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dce3de;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #6f7c74;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.rental-heart:hover {
+  color: #2f7659;
+  border-color: #bfd0c4;
+  background: #f3f7f4;
+}
+
+.rental-heart.saved {
+  color: #2f7659;
+  border-color: #bfd0c4;
+  background: #edf5ef;
+}
+
+.rental-heart:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.rental-status-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 17px;
+}
+
+.rental-type,
+.rental-live-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rental-type {
+  background: #f1f4f1;
+  color: #718078;
+}
+
+.rental-live-status.live {
+  background: #e9f4ed;
+  color: #397256;
+}
+
+.rental-live-status.inactive {
+  background: #f4efed;
+  color: #96766d;
+}
+
+.rental-card h2 {
+  min-height: 48px;
+  margin: 13px 0 0;
+  color: #202923;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.rental-location {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  color: #748079;
+  font-size: 13px;
+}
+
+.rental-location svg {
+  flex-shrink: 0;
+}
+
+.rental-price {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 20px;
+}
+
+.rental-price strong {
+  color: #26342c;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.rental-price span {
+  color: #8a958f;
+  font-size: 11px;
+}
+
+/* BHK / bath / area */
+
+.rental-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.rental-specs > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #f5f7f5;
+  color: #637168;
+  font-size: 11px;
+}
+
+.rental-specs svg {
+  color: #718078;
+}
+
+/* Details */
+
+.rental-information {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 20px;
+  border-top: 1px solid #e3e8e4;
+}
+
+.rental-information > div {
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 9px;
+  border-bottom: 1px solid #e3e8e4;
+}
+
+.rental-information > div:nth-child(odd) {
+  border-right: 1px solid #e3e8e4;
+}
+
+.rental-information span,
+.rental-footer span {
+  margin-bottom: 5px;
+  color: #8a958f;
+  font-size: 9px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rental-information strong {
+  color: #35423b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Footer */
+
+.rental-footer {
+  margin-top: 17px;
+  padding-top: 15px;
+  border-top: 1px solid #e3e8e4;
+}
+
+.rental-footer > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.rental-footer strong {
+  color: #48564e;
+  font-size: 12px;
+}
+
+/* States */
+
+.rentals-state {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #68756e;
+  font-size: 14px;
+}
+
+.rentals-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #dfe6e1;
+  border-top-color: #2f7659;
+  border-radius: 50%;
+  animation: rental-spin 0.8s linear infinite;
+}
+
+@keyframes rental-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rentals-error p {
+  margin: 0 0 10px;
+  color: #8a726c;
+}
+
+.rentals-error button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Pagination */
+
+.rentals-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 38px;
+}
+
+.rentals-pagination button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid #d8dfda;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334039;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rentals-pagination button:hover:not(:disabled) {
+  background: #f1f4f1;
+  border-color: #bdc8c1;
+}
+
+.rentals-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rentals-pagination > div {
+  color: #7b8780;
+  font-size: 12px;
+}
+
+.rentals-pagination strong {
+  color: #27332d;
+}
+
+/* Empty */
+
+.rentals-empty {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px dashed #d6ded8;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #6f7c74;
+}
+
+.rentals-empty > svg {
+  margin-bottom: 13px;
+  color: #738078;
+}
+
+.rentals-empty h2 {
+  margin: 0;
+  color: #27332d;
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.rentals-empty p {
+  max-width: 420px;
+  margin: 8px 0 20px;
+  color: #7d8982;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Responsive */
+
+@media (max-width: 1000px) {
+  .rentals-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .rentals-page {
+    width: min(100% - 28px, 1180px);
+    padding: 30px 0 55px;
+  }
+
+  .rentals-header {
+    align-items: flex-start;
+  }
+
+  .rentals-header-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .rentals-header h1 {
+    font-size: 37px;
+  }
+
+  .rentals-header p {
+    font-size: 14px;
+  }
+
+  .rentals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rentals-results-bar {
+    margin-top: 28px;
+  }
+
+  .rentals-pagination {
+    gap: 10px;
+  }
+
+  .rentals-pagination button {
+    padding: 0 12px;
+  }
+}

@@ -16,22 +16,38 @@ import "./ListingDetail.css";
 function ListingDetail() {
   const { id } = useParams();
 
-  const [listing, setListing] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [listing, setListing] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const [isSaved, setIsSaved] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
+
 
   useEffect(() => {
     loadListing();
+    checkSaved();
   }, [id]);
+
 
   async function loadListing() {
     try {
       setLoading(true);
       setError("");
 
-      const data = await ivyApi.getListing(id);
+      const data =
+        await ivyApi.getListing(id);
 
       setListing(data);
+
     } catch (err) {
       setError(
         err.message ||
@@ -41,6 +57,63 @@ function ListingDetail() {
       setLoading(false);
     }
   }
+
+
+  async function checkSaved() {
+    try {
+      const response =
+        await ivyApi.getSavedListings();
+
+      const savedListings =
+        response?.results ??
+        response ??
+        [];
+
+      const exists =
+        Array.isArray(savedListings) &&
+        savedListings.some(
+          (item) =>
+            String(
+              item.listing_id ??
+                item.id
+            ) === String(id)
+        );
+
+      setIsSaved(exists);
+
+    } catch {
+      // Keep the default unsaved state
+      // if saved listings cannot be loaded.
+    }
+  }
+
+
+  async function toggleSaved() {
+    if (saving) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      if (isSaved) {
+        await ivyApi.removeSavedListing(id);
+        setIsSaved(false);
+      } else {
+        await ivyApi.saveListing(id);
+        setIsSaved(true);
+      }
+
+    } catch (err) {
+      console.error(
+        "Unable to update saved listing:",
+        err
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
 
   if (loading) {
     return (
@@ -52,83 +125,110 @@ function ListingDetail() {
     );
   }
 
+
   if (error) {
     return (
       <PageLayout>
         <div className="detail-state detail-error">
-          <h2>Unable to load property</h2>
 
-          <p>{error}</p>
+          <h2>
+            Unable to load property
+          </h2>
+
+          <p>
+            {error}
+          </p>
 
           <Link to="/listings">
             <ArrowLeft size={16} />
             Back to listings
           </Link>
+
         </div>
       </PageLayout>
     );
   }
+
 
   if (!listing) {
     return (
       <PageLayout>
         <div className="detail-state">
-          <h2>Property not found</h2>
+
+          <h2>
+            Property not found
+          </h2>
 
           <Link to="/listings">
             <ArrowLeft size={16} />
             Back to listings
           </Link>
+
         </div>
       </PageLayout>
     );
   }
+
 
   const title =
     listing.apartment_name ||
     listing.title ||
     "Residential property";
 
+
   const locality =
     listing.locality ||
     listing.city ||
     "Location unavailable";
+
 
   const bedrooms =
     listing.bedroom ??
     listing.bedrooms ??
     listing.bhk;
 
+
   const bathrooms =
     listing.bathroom ??
     listing.bathrooms;
+
 
   const area =
     listing.super_built_up_area ??
     listing.built_up_area ??
     listing.carpet_area;
 
+
   const price =
     listing.price ??
     listing.monthly_rent ??
     listing.rent;
 
+
   const furnishing =
     listing.furnishing ??
     listing.furnishing_status;
 
-  const floor = listing.floor;
+
+  const floor =
+    listing.floor;
+
+
   const totalFloors =
     listing.total_floors;
+
 
   const image =
     listing.image_url ||
     listing.image ||
     listing.images?.[0];
 
+
   return (
     <PageLayout>
+
       <main className="listing-detail">
+
         <Link
           className="back-link"
           to="/listings"
@@ -137,8 +237,15 @@ function ListingDetail() {
           Back to listings
         </Link>
 
+
         <section className="detail-layout">
+
+          {/* =========================
+              IMAGE
+          ========================= */}
+
           <div className="detail-image">
+
             {image ? (
               <img
                 src={image}
@@ -146,99 +253,182 @@ function ListingDetail() {
               />
             ) : (
               <div className="detail-image-placeholder">
-                Ivy Homes
+                IVY HOMES
               </div>
             )}
+
+
+            {/* Floating save button */}
+
+            <button
+              type="button"
+              className={`detail-save ${
+                isSaved
+                  ? "saved"
+                  : ""
+              }`}
+              onClick={toggleSaved}
+              disabled={saving}
+              aria-label={
+                isSaved
+                  ? "Remove from saved listings"
+                  : "Save listing"
+              }
+              title={
+                isSaved
+                  ? "Remove from saved"
+                  : "Save listing"
+              }
+            >
+              <Heart
+                size={19}
+                fill={
+                  isSaved
+                    ? "currentColor"
+                    : "none"
+                }
+              />
+            </button>
+
           </div>
 
+
+          {/* =========================
+              CONTENT
+          ========================= */}
+
           <div className="detail-content">
+
             <div className="detail-actions">
+
               <span className="detail-badge">
                 {listing.property_type ||
                   "PROPERTY"}
               </span>
 
-              <button
-                type="button"
-                className="detail-save"
-                aria-label="Save listing"
-              >
-                <Heart size={18} />
-              </button>
             </div>
 
-            <h1>{title}</h1>
+
+            <h1>
+              {title}
+            </h1>
+
 
             <div className="detail-location">
               <MapPin size={17} />
-              <span>{locality}</span>
+
+              <span>
+                {locality}
+              </span>
             </div>
+
 
             <div className="detail-price">
               {price != null
                 ? `₹${Number(
                     price
-                  ).toLocaleString("en-IN")}`
+                  ).toLocaleString(
+                    "en-IN"
+                  )}`
                 : "Price on request"}
             </div>
 
+
+            {/* =========================
+                SPECS
+            ========================= */}
+
             <div className="detail-specs">
+
               {bedrooms != null && (
                 <div>
-                  <span>Bedrooms</span>
+                  <span>
+                    Bedrooms
+                  </span>
+
                   <strong>
                     {bedrooms}
                   </strong>
                 </div>
               )}
 
+
               {bathrooms != null && (
                 <div>
-                  <span>Bathrooms</span>
+                  <span>
+                    Bathrooms
+                  </span>
+
                   <strong>
                     {bathrooms}
                   </strong>
                 </div>
               )}
 
+
               {area != null && (
                 <div>
-                  <span>Area</span>
+                  <span>
+                    Area
+                  </span>
+
                   <strong>
                     {Number(
                       area
-                    ).toLocaleString("en-IN")}{" "}
+                    ).toLocaleString(
+                      "en-IN"
+                    )}{" "}
                     sq ft
                   </strong>
                 </div>
               )}
 
+
               {furnishing && (
                 <div>
-                  <span>Furnishing</span>
+                  <span>
+                    Furnishing
+                  </span>
+
                   <strong>
                     {furnishing}
                   </strong>
                 </div>
               )}
 
+
               {floor != null && (
                 <div>
-                  <span>Floor</span>
+                  <span>
+                    Floor
+                  </span>
+
                   <strong>
                     {floor}
+
                     {totalFloors != null
                       ? ` / ${totalFloors}`
                       : ""}
                   </strong>
                 </div>
               )}
+
             </div>
 
+
+            {/* =========================
+                PROPERTY INFORMATION
+            ========================= */}
+
             <div className="detail-section">
-              <h2>Property information</h2>
+
+              <h2>
+                Property information
+              </h2>
+
 
               <div className="detail-information">
+
                 {listing.project_id && (
                   <div>
                     <span>
@@ -250,6 +440,7 @@ function ListingDetail() {
                     </strong>
                   </div>
                 )}
+
 
                 {listing.listing_id && (
                   <div>
@@ -263,6 +454,7 @@ function ListingDetail() {
                   </div>
                 )}
 
+
                 {listing.property_type && (
                   <div>
                     <span>
@@ -274,6 +466,7 @@ function ListingDetail() {
                     </strong>
                   </div>
                 )}
+
 
                 {listing.is_live != null && (
                   <div>
@@ -288,19 +481,50 @@ function ListingDetail() {
                     </strong>
                   </div>
                 )}
+
               </div>
+
             </div>
+
+
+            {/* =========================
+                SAVE BUTTON
+            ========================= */}
 
             <button
               type="button"
-              className="save-listing-button"
+              className={`save-listing-button ${
+                isSaved
+                  ? "saved"
+                  : ""
+              }`}
+              onClick={toggleSaved}
+              disabled={saving}
             >
-              <Heart size={18} />
-              Save this property
+
+              <Heart
+                size={18}
+                fill={
+                  isSaved
+                    ? "currentColor"
+                    : "none"
+                }
+              />
+
+              {saving
+                ? "Updating..."
+                : isSaved
+                  ? "Saved to favourites"
+                  : "Save this property"}
+
             </button>
+
           </div>
+
         </section>
+
       </main>
+
     </PageLayout>
   );
 }

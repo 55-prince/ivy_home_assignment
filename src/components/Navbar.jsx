@@ -1,13 +1,33 @@
-import { Heart, LogIn } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import {
+  Heart,
+  LogIn,
+  LogOut,
+} from "lucide-react";
+import {
+  NavLink,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import "./Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { user, logout } = useAuth();
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login");
+  }
 
   return (
     <header className="navbar">
       <div className="nav-container">
+
         <button
+          type="button"
           className="brand"
           onClick={() => navigate("/")}
           aria-label="Go to Ivy Homes home"
@@ -16,11 +36,15 @@ function Navbar() {
           <span>ivy homes</span>
         </button>
 
+
         <nav className="nav-links">
+
           <NavLink
             to="/listings"
             className={({ isActive }) =>
-              isActive ? "nav-link active" : "nav-link"
+              isActive
+                ? "nav-link active"
+                : "nav-link"
             }
           >
             Buy
@@ -29,7 +53,9 @@ function Navbar() {
           <NavLink
             to="/rentals"
             className={({ isActive }) =>
-              isActive ? "nav-link active" : "nav-link"
+              isActive
+                ? "nav-link active"
+                : "nav-link"
             }
           >
             Rent
@@ -38,7 +64,9 @@ function Navbar() {
           <NavLink
             to="/projects"
             className={({ isActive }) =>
-              isActive ? "nav-link active" : "nav-link"
+              isActive
+                ? "nav-link active"
+                : "nav-link"
             }
           >
             Projects
@@ -47,30 +75,72 @@ function Navbar() {
           <NavLink
             to="/insights"
             className={({ isActive }) =>
-              isActive ? "nav-link active" : "nav-link"
+              isActive
+                ? "nav-link active"
+                : "nav-link"
             }
           >
             Insights
           </NavLink>
+
         </nav>
 
+
         <div className="nav-actions">
+
           <button
-            className="saved-button"
+            type="button"
+            className={`saved-button ${
+              location.pathname === "/saved"
+                ? "saved-active"
+                : ""
+            }`}
             onClick={() => navigate("/saved")}
           >
             <Heart size={16} />
-            Saved
+            <span>Saved</span>
           </button>
 
-          <button
-            className="login-button"
-            onClick={() => navigate("/login")}
-          >
-            <LogIn size={16} />
-            Sign in
-          </button>
+
+          {user ? (
+            <>
+              <div
+                className="user-badge"
+                title={user.email}
+              >
+                <span className="user-avatar">
+                  {user.email
+                    ?.charAt(0)
+                    .toUpperCase()}
+                </span>
+
+                <span className="user-email">
+                  {user.email}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="logout-button"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="login-button"
+              onClick={() => navigate("/login")}
+            >
+              <LogIn size={16} />
+              <span>Sign in</span>
+            </button>
+          )}
+
         </div>
+
       </div>
     </header>
   );
