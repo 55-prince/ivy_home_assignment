@@ -24,7 +24,7 @@ const SAVED_FILE = path.join(DATA_DIR, "saved-listings.json");
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: true,
     credentials: true,
   })
 );
@@ -40,7 +40,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       maxAge: 1000 * 60 * 60 * 8,
     },
   })
@@ -1247,8 +1247,12 @@ app.get(
 // Start server
 // --------------------------------------------------
 
-app.listen(PORT, () => {
-  console.log(
-    `API server running on http://localhost:${PORT}`
-  );
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(
+      `API server running on http://localhost:${PORT}`
+    );
+  });
+}
+
+module.exports = app;
