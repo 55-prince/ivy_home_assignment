@@ -5,7 +5,13 @@ const path = require("path");
 const session = require("express-session");
 require("dotenv").config();
 
+
 const app = express();
+
+
+const frontendPath = path.join(__dirname, "..", "dist");
+
+app.use(express.static(frontendPath));
 
 const PORT = process.env.PORT || 5000;
 
@@ -1114,12 +1120,18 @@ app.get(
 // Start server
 // --------------------------------------------------
 
+app.get("/{*splat}", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(
-      `API server running on http://localhost:${PORT}`
-    );
+    console.log(`API server running on http://localhost:${PORT}`);
   });
 }
+
+
+
+
 
 module.exports = app;
