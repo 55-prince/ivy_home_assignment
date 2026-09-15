@@ -8,7 +8,6 @@ require("dotenv").config();
 
 const app = express();
 
-
 const frontendPath = path.join(__dirname, "..", "dist");
 
 app.use(express.static(frontendPath));
