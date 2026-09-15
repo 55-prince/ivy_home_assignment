@@ -8,7 +8,7 @@
     "server": "nodemon --ignore server/data/ server/index.cjs",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "seed": "node server/seed.cjs",
-    "build": "vite build",
+    "build": "vite build --outDir public",
     "analyze": "node server/analyze.cjs",
     "answers": "node server/answers.cjs",
     "fakeStrong": "node server/fakeStrong.cjs"
