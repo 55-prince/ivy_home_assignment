@@ -5,7 +5,39 @@
       "destination": "/index.js"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/listings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/listings/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/saved",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/rentals",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/projects",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/projects/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/insights",
       "destination": "/index.html"
     }
   ]
