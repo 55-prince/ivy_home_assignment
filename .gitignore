@@ -26,4 +26,4 @@ dist-ssr
 
 node_modules
 .env
-server/data/*.json
+
